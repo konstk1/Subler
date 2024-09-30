@@ -145,6 +145,7 @@ import MP42Foundation
         case fileNotFound
         case outOfDiskSpace
         case optimizationFailure
+        case metadataNotFound
     }
 
     private func checkDiskSpace(at url: URL) -> Int {
@@ -281,7 +282,10 @@ import MP42Foundation
         for action in actions.filter({ $0.type == .pre }) {
             localizedWorkingDescription = action.localizedDescription
             delegate?.updateProgress(0)
-            _ = action.runAction(self)
+            let result = action.runAction(self)
+            if result == false, let _ = action as? QueueMetadataAction {
+                throw ProcessError.metadataNotFound
+            }
         }
     }
 
@@ -475,6 +479,8 @@ extension QueueItem.ProcessError: LocalizedError {
             return NSLocalizedString("Not enough disk space.", comment: "QueueItem Error")
         case .optimizationFailure:
             return NSLocalizedString("The file couldn't be optimized.", comment: "QueueItem Error")
+        case .metadataNotFound:
+            return NSLocalizedString("The metadata for the file couldn't be found.", comment: "QueueItem Error")
         }
     }
 
@@ -488,6 +494,8 @@ extension QueueItem.ProcessError: LocalizedError {
             return NSLocalizedString("Please free some space on the destination disk.", comment: "QueueItem Error")
         case .optimizationFailure:
             return NSLocalizedString("An error occurred while optimizing the file.", comment: "QueueItem Error")
+        case .metadataNotFound:
+            return NSLocalizedString("Try to use another metadata source.", comment: "QueueItem Error")
         }
     }
 }
